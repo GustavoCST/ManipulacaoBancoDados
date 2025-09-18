@@ -1,0 +1,185 @@
+---
+title: "Desafio 2 (python)"
+format:
+  html: 
+    self-contained: true
+editor: visual
+---
+
+## Quarto
+
+```{r}
+library(reticulate) #abrindo o pacote reticulate
+```
+
+```{r}
+virtualenv_create("r-reticulate", python = "C:/Program Files/Python312/python.exe") #criando um ambiente virtual pra usar python
+```
+
+```{r}
+use_virtualenv("r-reticulate", required = TRUE) #manda usar o ambiente virtual criado
+py_config() # mostra as informações de configuração do Python que o reticulate está usando  
+```
+
+```{r}
+py_install("pandas", envname = "r-reticulate") #instalando o pandas
+py_install("numpy", envname = "r-reticulate") #instalando o numpy
+```
+
+#ai sempre rodar library(reticulate) use_virtualenv("r-reticulate", required = TRUE)
+
+#1 estatisticas suficientes sao #a) numero total de voos (pada cada dia/mes/cia) #b) numero de voos (dentre os apontados acima) que tem a coluna arrival_delay \> 10
+
+```{python}
+#2
+import pandas as pd   # importa a biblioteca pandas para manipulação de dados
+
+def getStats(input_df, pos=None):   # define a função getStats que recebe um DataFrame de entrada (input_df)
+                                    # o argumento pos não é usado aqui (pode servir em leitura em chunks)
+
+    # Filtrar companhias e remover NA
+    df_filtered = input_df[                       # cria um novo DataFrame filtrado
+        (input_df["AIRLINE"].isin(["AA", "DL", "UA", "US"])) &  # mantém apenas as companhias desejadas
+        (input_df["ARRIVAL_DELAY"].notna())                     # remove linhas onde ARRIVAL_DELAY é NA
+    ]
+    
+    # Agrupar e resumir
+    result = (                                      # cria um novo DataFrame resumido
+        df_filtered
+        .groupby(["AIRLINE", "DAY", "MONTH"], as_index=False)   # agrupa por companhia, dia e mês
+        .agg(                                       # aplica agregações nos grupos
+            n=("ARRIVAL_DELAY", "size"),            # conta quantos voos existem em cada grupo (número de linhas)
+            atrasos=("ARRIVAL_DELAY", lambda x: (x > 10).sum()) # conta quantos atrasos > 10 minutos em cada grupo
+        )
+    )
+    
+    return result   # retorna o DataFrame com estatísticas por companhia/dia/mês
+
+```
+
+```{python}
+#3
+import pandas as pd        # importa a biblioteca pandas, usada para leitura e manipulação de dados
+import time                # importa a biblioteca time, usada para medir o tempo de execução
+
+# Função callback equivalente ao gesStats (exemplo genérico)
+def gesStats(chunk):       # define a função gesStats que recebe um pedaço (chunk) do DataFrame
+    # aqui você faz o processamento do pedaço do dataframe como contar os valores de AIRLINES
+    print(chunk['AIRLINE'].value_counts().head())  
+    # conta quantas vezes cada companhia aparece no pedaço (chunk) e mostra apenas os 5 primeiros
+
+# Cronometrar
+ini = time.time()          # registra o tempo inicial (antes da leitura e processamento)
+
+# Leitura em chunks de 100 mil registros
+chunksize = 10**5          # define o tamanho de cada pedaço a ser lido do CSV (100.000 linhas)
+for chunk in pd.read_csv("flights.csv.zip",   # lê o arquivo comprimido em ZIP
+                         compression="zip",   # especifica que o arquivo está compactado em ZIP
+                         usecols=['AIRLINE', 'DAY', 'MONTH', 'ARRIVAL_DELAY'],  
+                         # lê apenas as colunas necessárias do arquivo
+                         chunksize=chunksize):  
+                         # lê o arquivo em blocos (chunks) de 100.000 linhas por vez
+    gesStats(chunk)        # chama a função gesStats para processar cada pedaço lido
+
+fim = time.time()          # registra o tempo final (após todo o processamento)
+print(f"Importado com 100 mil registros por vez em {fim - ini:.2f} segundos.")  
+# mostra quanto tempo total levou para ler e processar os dados em pedaços
+```
+
+```{python}
+#4
+import pandas as pd         # importa a biblioteca pandas para manipulação de dados
+import time                 # importa a biblioteca time para medir tempo de execução
+
+def computeStats(df):       # define a função computeStats que recebe um DataFrame (df)
+    # cria colunas auxiliares (igual no R: atrasos/n)
+    df = df.copy()          # faz uma cópia do DataFrame para não modificar o original
+    df["n"] = 1             # cria uma coluna 'n' com valor 1 (para contar linhas)
+    df["atrasos"] = (df["ARRIVAL_DELAY"] > 0).astype(int)  # cria coluna binária (1 se atraso > 0, senão 0)
+
+    grouped = (             # agrupa os dados para calcular estatísticas
+        df.groupby(["AIRLINE", "DAY", "MONTH"], as_index=False)  # agrupa por companhia, dia e mês
+          .agg({"atrasos": "sum", "n": "sum"})                   # soma total de atrasos e total de voos
+    )
+
+    grouped["Perc"] = grouped["atrasos"] / grouped["n"]   # calcula a porcentagem de atrasos
+
+    grouped["DATA"] = pd.to_datetime(                     # cria coluna de datas reais
+        dict(year=2015, month=grouped["MONTH"], day=grouped["DAY"])  # monta a data a partir de ano fixo + mês + dia
+    )
+
+    return grouped[["AIRLINE", "DATA", "Perc"]]           # retorna apenas as colunas relevantes
+
+# Cronometrar
+ini = time.time()       # guarda o tempo inicial para medir duração da execução
+
+chunksize = 10**5       # define o tamanho de cada pedaço (100.000 linhas) a ser lido do CSV
+results = []            # inicializa lista vazia para armazenar os resultados dos chunks
+
+for chunk in pd.read_csv(                     # lê o CSV compactado em pedaços (chunks)
+    "flights.csv.zip",                        # arquivo de dados (compactado em zip)
+    compression="zip",                        # informa que o arquivo está zipado
+    usecols=["AIRLINE", "DAY", "MONTH", "ARRIVAL_DELAY"],  # lê apenas colunas necessárias
+    chunksize=chunksize                       # lê em pedaços de 100.000 linhas
+):
+    stats = computeStats(chunk)   # aplica a função computeStats a cada pedaço lido
+    results.append(stats)         # armazena o resultado na lista de resultados
+
+if results:  # só concatena se tiver algum resultado
+    in5 = pd.concat(results, ignore_index=True)   # junta todos os pedaços em um único DataFrame
+else:
+    in5 = pd.DataFrame(columns=["AIRLINE", "DATA", "Perc"])  # se não tiver dados, cria DataFrame vazio
+
+fim = time.time()    # guarda o tempo final da execução
+print(f"Importado e processado em chunks em {fim - ini:.2f} segundos.")  # mostra quanto tempo levou
+
+print(in5.head())    # exibe as primeiras linhas do DataFrame final
+
+
+```
+
+```{r}
+reticulate::py_install(c("matplotlib", "calplot")) #istalando os pacotes de python (alem do pandas) que vamos usar a seguir
+```
+
+```{python}
+#5
+import pandas as pd                      # Biblioteca para manipulação de dados (DataFrames e séries)
+import matplotlib.pyplot as plt          # Biblioteca para criar gráficos
+import calplot                           # Biblioteca para criar gráficos de calendário
+from matplotlib.colors import LinearSegmentedColormap  # Permite criar colormaps (gradientes de cores) personalizados
+
+# Colormap idêntico ao do R, do azul para o vermelho
+cmap = LinearSegmentedColormap.from_list("custom", ["#4575b4", "#d73027"])
+
+# Função para criar gráfico de calendário de atrasos por companhia aérea
+def baseCalendario(stats, cia, titulo):
+    # Filtra apenas as linhas do DataFrame da companhia desejada
+    input_df = stats[stats["AIRLINE"] == cia]
+
+    # Cria uma série com DATA no índice e Perc como valores
+    serie = pd.Series(input_df["Perc"].values, index=input_df["DATA"])
+
+    # Cria o gráfico de calendário usando calplot
+    fig, ax = calplot.calplot(
+        serie,              # série de dados com datas no índice
+        cmap=cmap,          # aplica o colormap azul-vermelho
+        colorbar=True,      # adiciona barra de cores
+        suptitle=titulo,    # adiciona título ao gráfico
+        linewidth=0.5,      # define a espessura das linhas entre os dias
+        figsize=(10, 3)     # define o tamanho do gráfico (largura x altura)
+    )
+
+    # Ajusta título do gráfico para fonte maior e negrito
+    plt.suptitle(titulo, fontsize=14, weight="bold")
+
+    # Exibe o gráfico na tela
+    plt.show()
+
+# Gera gráficos de calendário para cada companhia aérea
+baseCalendario(in5, "AA", "Percentual de Atraso - AA")  # American Airlines
+baseCalendario(in5, "DL", "Percentual de Atraso - DL")  # Delta Airlines
+baseCalendario(in5, "UA", "Percentual de Atraso - UA")  # United Airlines
+baseCalendario(in5, "US", "Percentual de Atraso - US")  # US Airways
+
+```
