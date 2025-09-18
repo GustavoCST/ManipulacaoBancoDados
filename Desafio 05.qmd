@@ -1,0 +1,134 @@
+---
+title: "Desafio 05 - RA:237599"
+format:
+  html: 
+    self-contained: true
+editor: visual
+---
+
+```{r}
+#install.packages("RSQLite")
+```
+
+```{r}
+library(RSQLite)
+```
+
+```{r}
+db = dbConnect(SQLite(),
+'disco.db')
+db
+```
+
+```{r}
+dbListTables(db)
+```
+
+```{r}
+dbListFields(db,
+'albums')
+
+```
+
+```{r}
+album_db = dbGetQuery(db,
+'SELECT * FROM albums')
+head(album_db)
+```
+
+```{r}
+dim(album_db)
+
+```
+
+```{r}
+# Primeiro Desafio 
+#Selecione as colunas trackid, name, composer e unitprice. Ordene o objeto
+#resultante por unitprice.
+
+sql = 'SELECT trackid, name, composer, unitprice FROM tracks ORDER BY unitprice'
+res = dbGetQuery(db, sql)
+head(res)
+```
+
+
+
+
+
+```{r}
+#Segundo Desafio
+#Quais são as cidades de todos os clientes, ordenadas por nome de cidade?
+
+sql = 'SELECT DISTINCT city FROM customers ORDER BY city'
+ex3a = dbGetQuery(db, sql)
+head(ex3a)
+```
+
+```{r}
+dim(ex3a)
+
+```
+
+
+
+
+```{r}
+#Terceiro desafio
+#Quais são as músicas e identificadores de faixa e álbum produzidas pelo
+#artista que identificador 12?
+
+sql = paste('SELECT trackid, name, albumid FROM tracks'
+,
+'WHERE albumid IN'
+,
+'(SELECT albumid FROM albums WHERE artistid==12)')
+dbGetQuery(db, sql)
+
+```
+
+
+
+
+```{r}
+#Quarto desafio
+#Quais são as faixas cujos nomes começam com qualquer caracter seguido de
+#'ere' e terminam com qualquer expressão?
+
+sql = "SELECT trackid, name FROM tracks WHERE name GLOB '?ere*'"
+dbGetQuery(db, sql)
+```
+
+
+
+
+```{r}
+#Quinto desafio
+#Quais são as faixas cujos nomes possuem algum dígito?
+
+sql = "SELECT trackid, name FROM tracks WHERE name GLOB '*[0-9]*'"
+dbGetQuery(db, sql)
+
+```
+
+
+
+
+```{r}
+#Sexto desafio
+#Quantas faixas por disco?
+sql = 'SELECT albumid, COUNT(trackid) FROM tracks GROUP BY albumid'
+dbGetQuery(db, sql)
+```
+
+
+
+
+```{r}
+#Setimo desafio
+#Quais são os nomes de cada faixa com os respectivos títulos dos álbums?
+sql = paste('SELECT trackid, name, title FROM tracks'
+,
+'INNER JOIN albums ON albums.albumid=tracks.albumid')
+dbGetQuery(db, sql)
+```
+
