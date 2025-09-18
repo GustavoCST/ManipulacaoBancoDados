@@ -1,0 +1,55 @@
+---
+title: "Desafio 3"
+format: html
+editor: visual
+---
+
+## Quarto
+
+```{r}
+#Instalando os pacotes para ler o Parquet e o Json e o tidyverse
+install.packages("arrow")
+install.packages("jsonlite")
+library(arrow)
+library(jsonlite)
+library(tidyverse)
+
+```
+
+```{r}
+
+#Lendo o banco de dados em parquet
+d_parquet = read_parquet("train-00000-of-00001.parquet")
+
+
+#legenda do banco de dados
+#0: sadness
+#1: joy
+#2: love
+#3: anger
+#4: fear
+#5: surprise
+
+
+#colocando a legenda no banco de dados
+d_parquet_leg = d_parquet %>% 
+  mutate(emotion = recode(label,
+                          `0` = "sadness",
+                          `1` = "joy",
+                          `2` = "love",
+                          `3` = "anger",
+                          `4` = "fear",
+                          `5` = "surprise"))
+```
+
+```{r}
+#tirando o zip do arquivo json, e ja lendo ele e o nomeando
+unzip("jonson.zip")
+d_json = fromJSON("heart_disease_dataset.json")
+```
+
+```{r}
+#dando uma espiada nos bancos de dados
+head(d_parquet_leg)
+head(d_json)
+```
