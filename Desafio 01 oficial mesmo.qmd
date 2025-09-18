@@ -1,0 +1,49 @@
+---
+title: "Desafio 01"
+format:
+  html: 
+    self-contained: true
+editor: visual
+---
+
+```{r}
+library(reticulate) #abrindo o pacote reticulate
+```
+
+```{r}
+virtualenv_create("env_me315", python = "C:/Program Files/Python312/python.exe") #criando um ambiente virtual pra usar python
+```
+
+```{r}
+use_virtualenv("env_me315", required = TRUE) #manda usar o ambiente virtual criado
+py_config() # mostra as informações de configuração do Python que o reticulate está usando 
+```
+
+```{r}
+
+py_install("pandas", envname = "env_me315") #instalando o pandas
+```
+
+```{r}
+ini <- Sys.time()
+dados <- read.csv(unz("flights.csv.zip", "flights.csv"))
+fim <- Sys.time()
+fim - ini
+```
+
+```{r}
+library(readr)
+ini <- Sys.time()
+dados <- read_csv('flights.csv.zip')
+fim <- Sys.time()
+fim - ini
+```
+
+```{python}
+import time
+import pandas as pd
+ini = time.time()
+dados = pd.read_csv("flights.csv.zip", compression="zip", header=0, sep=",", low_memory=False)
+fim = time.time()
+fim - ini
+```
