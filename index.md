@@ -32,4 +32,3 @@ o site ficará disponível em:
 
 👉 **https://gustavocst.github.io/ManipulacaoBancoDados/**  
 
-Esse arquivo `index.md` servirá como página inicial e permitirá navegar pelos arquivos do repositório.  
