@@ -3,7 +3,7 @@
 Repositório para o **Desafio Plus de ME315 - Manipulação de Banco de Dados**.
 
 ---
-<!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
