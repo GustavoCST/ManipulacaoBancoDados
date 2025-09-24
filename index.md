@@ -19,7 +19,9 @@ Repositório para o **Desafio Plus de ME315 - Manipulação de Banco de Dados**.
 - [Desafio 06.html](./Desafio%2006.html)  
 - [Desafio 06.qmd](./Desafio%2006.qmd)  
 - [Desafio 07.html](./Desafio%2007.html)  
-- [Desafio 07.qmd](./Desafio%2007.qmd)  
+- [Desafio 07.qmd](./Desafio%2007.qmd)
+- [Desafio 08.qmd](./Desafio%2008.qmd)
+- [Desafio 08.html](./Desafio%2008.html)
 - [heart_disease_dataset.json](./heart_disease_dataset.json)  
 
 ---
