@@ -1,0 +1,236 @@
+---
+title: "Desafio 10"
+format:
+  html: 
+    self-contained: true
+editor: visual
+---
+##Introducao ao polars
+
+```{r}
+library(reticulate)#abrindo o pacote reticulate
+```
+
+```{r}
+virtualenv_create("env_me315", python = "C:/Program Files/Python312/python.exe")#criando um ambiente virtual pra usar python
+```
+
+```{r}
+use_virtualenv("env_me315", required = TRUE) #manda usar o ambiente virtual criado
+```
+
+```{python}
+#!pip install polars
+#!pip install fastexcel
+```
+
+```{python}
+import polars as pl
+```
+
+```{python}
+## Lembre-se que já carregamos a biblioteca
+import polars as pl
+```
+
+```{python}
+aeroportos = pl.read_csv("airports.csv",
+                         columns = ["IATA_CODE", "CITY", "STATE"])
+aeroportos.head(2)
+```
+
+```{python}
+#!pip install pyarrow #dependencia para executar o proximo codigo
+```
+
+
+```{python}
+#corringindo
+wdi = pl.read_excel("WDIEXCEL.xlsx", sheet_name = "Country",
+                    columns = ["Short Name", "Region"])
+wdi.head(2)
+```
+
+```{python}
+df = pl.DataFrame({
+    "grupo": ["A", "A", "B", "B", "C"],
+    "valor1": [10, 15, 10, None, 25],
+    "valor2": [5, None, 20, 30, None]
+})
+df
+```
+
+```{python}
+df["valor1"]
+```
+
+```{python}
+df["valor1"].drop_nulls()
+```
+
+```{python}
+df["valor1"].drop_nulls().mean()
+```
+
+```{python}
+df.select([
+  pl.col("valor1").mean().alias("media_v1"),
+  pl.col("valor2").mean()
+])
+```
+
+```{python}
+df.group_by("grupo").agg([
+  pl.col("valor1").mean().alias("media_valor1"),
+  pl.col("valor2").min().alias("min_valor2")
+]).sort("grupo")
+```
+```{python}
+voos = pl.read_csv("flights.csv",
+                   columns = ["AIRLINE", "ARRIVAL_DELAY", "DESTINATION_AIRPORT"],
+                   schema_overrides = {"AIRLINE": pl.Utf8,
+                             "ARRIVAL_DELAY": pl.Int32,
+                             "DESTINATION_AIRPORT": pl.Utf8})
+voos.shape
+```
+
+```{python}
+voos.head(3)
+```
+```{python}
+resultado = (
+  voos.drop_nulls(["AIRLINE", "DESTINATION_AIRPORT", "ARRIVAL_DELAY"])
+  .filter(
+    pl.col("AIRLINE").is_in(["AA", "DL"]) &
+    pl.col("DESTINATION_AIRPORT").is_in(["SEA", "MIA", "BWI"])
+    )
+    .group_by(["AIRLINE", "DESTINATION_AIRPORT"])
+    .agg([
+      (pl.col("ARRIVAL_DELAY") > 30).mean().alias("atraso_medio")
+      ])
+)
+```
+
+
+```{python}
+resultado.sort("atraso_medio")
+```
+## Dados relacionais com Polars
+
+```{python}
+import polars as pl
+
+# Criando DataFrames
+clientes = pl.DataFrame({
+    "cliente_id": [1, 2, 3, 4],
+    "nome": ["Ana", "Bruno", "Clara", "Daniel"]
+})
+
+print(clientes)
+```
+```{python}
+pedidos = pl.DataFrame({
+    "pedido_id": [101, 102, 103, 104, 105],
+    "cliente_id": [1, 2, 3, 1, 5],
+    "valor": [100.50, 250.75, 75.00, 130.00, 79.00]
+})
+
+print(pedidos)
+```
+```{python}
+res_ij = clientes.join(pedidos, on="cliente_id", how="inner")
+print(res_ij)
+```
+```{python}
+res_lj = clientes.join(pedidos, on="cliente_id", how="left")
+print(res_lj)
+```
+```{python}
+res_rj = clientes.join(pedidos, on="cliente_id", how="right")
+print(res_rj)
+```
+```{python}
+#corrigindo a versao antiga
+res_oj = clientes.join(pedidos, on="cliente_id", how="full")
+print(res_oj)
+```
+```{python}
+#corrigindo (retirando o "on="cliente_id")
+res_cj = clientes.join(pedidos, how="cross")
+print(res_cj)
+```
+#P1 Qual o valor medio das compras realizadas para cada cliente indentificado
+```{python}
+print(clientes)
+```
+
+```{python}
+print(pedidos)
+```
+
+```{python}
+res = res_ij.group_by(["nome", "cliente_id"]).agg(pl.col("valor").mean())
+print(res)
+```
+
+#P2 Informe os nomes e a quantidade de compras com valor mínimo de $100.00 realizadas por cada cliente.
+
+```{python}
+print(clientes)
+```
+
+```{python}
+print(pedidos)
+```
+
+```{python}
+res = (res_oj.with_columns(pl.col("valor") > 100)
+       .group_by("nome")
+       .agg(pl.col("valor").sum()))
+print(res)
+```
+
+#JOIN com Múltiplas Colunas como Chave
+```{python}
+vendas = pl.DataFrame({
+    "id_venda": [1, 2, 3],
+    "id_cl": [1, 2, 1],
+    "id_prod": [101, 102, 103],
+    "qtde": [2, 1, 1]
+})
+
+detalhes_pedidos = pl.DataFrame({
+    "id_ped": [201, 202, 203],
+    "cl_id": [1, 2, 1],
+    "id_prod": [101, 102, 104],
+    "valor": [50.00, 75.00, 100.00]
+})
+```
+
+```{python}
+print(vendas)
+```
+
+```{python}
+print(detalhes_pedidos)
+```
+
+```{python}
+final = vendas.join(detalhes_pedidos,
+                    left_on = ["id_cl", "id_prod"],
+                    right_on = ["cl_id", "id_prod"],
+                    how = "inner")
+print(final)
+```
+
+```{r}
+# Captura o horário atual
+horario_geracao <- Sys.time()
+
+# Mostrar no console
+horario_geracao
+
+# Ou inserir em um HTML (exemplo com cat)
+cat("<p>Relatório gerado em:", horario_geracao, "</p>")
+```
+
