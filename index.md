@@ -186,6 +186,14 @@ Repositório para o **Desafio Plus de ME315 - Manipulação de Banco de Dados**.
         <a href="./heart_disease_dataset.json">heart_disease_dataset.json</a>
         <p>Dataset de exemplo sobre doenças cardíacas.</p>
       </div>
+      <div class="card">
+        <a href="./Desafio%2010.html">Desafio 10.html</a>
+        <p>HTML do Desafio 10.</p>
+      </div>
+      <div class="card">
+        <a href="./Desafio%2010.qmd">Desafio 10.qmd</a>
+        <p>Arquivo Quarto do Desafio 10.</p>
+      </div>
     </div>
   </div>
 
