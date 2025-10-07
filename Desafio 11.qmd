@@ -1,0 +1,245 @@
+---
+title: "Desafio 11"
+format:
+  html: 
+    self-contained: true
+editor: visual
+---
+```{r}
+library(reticulate)#abrindo o pacote reticulate
+```
+
+```{r}
+virtualenv_create("env_me315", python = "C:/Program Files/Python312/python.exe")#criando um ambiente virtual pra usar python
+```
+
+```{r}
+use_virtualenv("env_me315", required = TRUE) #manda usar o ambiente virtual criado
+```
+
+```{python}
+#!pip install polars
+#!pip install fastexcel
+```
+
+```{python}
+#importando o polars
+import polars as pl
+```
+
+##1
+
+```{python}
+# 1️⃣ Ler CSV rapidamente sem cabeçalho
+df = pl.read_csv("renda_adulta.csv.gz", has_header = False, null_values="?")
+```
+
+```{python}
+# 2️⃣ Definir os nomes das colunas
+colunas = [
+    "age", "workclass", "fnlwgt", "education", "education-num",
+    "marital-status", "occupation", "relationship", "race", "sex",
+    "capital-gain", "capital-loss", "hours-per-week", "native-country",
+    "income"
+]
+```
+
+```{python}
+#definindo as colunas
+df.columns = colunas
+```
+
+```{python}
+# 3️⃣ Converter tipos das colunas
+tipos = {
+    "age": pl.Int64,
+    "workclass": pl.Categorical,
+    "fnlwgt": pl.Int64,
+    "education": pl.Categorical,
+    "education-num": pl.Int64,
+    "marital-status": pl.Categorical,
+    "occupation": pl.Categorical,
+    "relationship": pl.Categorical,
+    "race": pl.Categorical,
+    "sex": pl.Categorical,
+    "capital-gain": pl.Int64,
+    "capital-loss": pl.Int64,
+    "hours-per-week": pl.Int64,
+    "native-country": pl.Categorical,
+    "income": pl.Categorical
+}
+```
+
+```{python}
+df = df.with_columns([df[col].cast(tipo).alias(col) for col, tipo in tipos.items()])  # Converte cada coluna para o tipo definido em 'tipos' e mantém os nomes
+
+```
+
+```{python}
+print(df.head()) #mostra o inicio do df
+```
+
+##2
+
+```{python}
+# Mostrar os tipos de cada coluna
+for col, dtype in zip(df.columns, df.dtypes):
+    print(f"{col}: {dtype}")
+
+```
+
+##3
+
+```{python}
+# Dimensões do DataFrame
+linhas, colunas = df.shape #tamanho do df
+print(f"Número de linhas: {linhas}")
+print(f"Número de colunas: {colunas}")
+print(f"Logo a dimentao é {linhas} x {colunas}")
+```
+
+##4
+
+```{python}
+# Contagem de pessoas por faixa de renda
+acima_50k = df.filter(df["income"] == ">50K").height
+abaixo_50k = df.filter(df["income"] == "<=50K").height
+
+print(f"Pessoas que ganham acima de $50.000: {acima_50k}")
+print(f"Pessoas que ganham abaixo ou igual a $50.000: {abaixo_50k}")
+
+```
+
+##5
+
+```{python}
+import polars as pl
+
+# Renomear as colunas wide para 'gain' e 'loss' para simplificar o melt
+df_renomeado = df.rename({
+    "capital-gain": "gain",
+    "capital-loss": "loss"
+})
+
+# Transformar as colunas 'gain' e 'loss' de formato wide para longo
+renda_longo = df_renomeado.unpivot(
+    index=[col for col in df_renomeado.columns if col not in ["gain", "loss"]],  # mantém todas as outras colunas como identificadores
+    on=["gain", "loss"],  # colunas que serão convertidas em formato longo
+    variable_name="tipo",  # nome da coluna que indicará o tipo ('gain' ou 'loss')
+    value_name="Valor"     # nome da coluna que armazenará os valores
+)
+
+# Exibir as primeiras linhas do DataFrame longo para verificar o resultado
+print(renda_longo.head())
+
+```
+
+##6
+
+```{python}
+# Calcula a média de horas trabalhadas por semana agrupando pelo nível salarial ('income')
+media_horas = df.group_by("income").agg(
+    pl.col("hours-per-week").mean().alias("media_horas")  # calcula a média da coluna 'hours-per-week' e renomeia para 'media_horas'
+)
+
+# Exibe o resultado com a média de horas por classe salarial
+print(media_horas)
+
+
+```
+
+##7
+
+```{python}
+# Conta quantas pessoas existem em cada profissão
+contagem_profissao = (
+    df.group_by("occupation")  # agrupa o DataFrame pela coluna 'occupation'
+      .agg(
+          pl.len().alias("num_pessoas")  # conta o número de linhas em cada grupo e renomeia para 'num_pessoas'
+      )
+      .sort("num_pessoas", descending=True)  # ordena as profissões do maior para o menor número de pessoas
+)
+
+# Exibe a contagem de pessoas por profissão
+print(contagem_profissao)
+
+```
+
+##8
+
+
+```{python}
+#!pip install matplotlib
+```
+
+
+```{python}
+import matplotlib
+matplotlib.use("Agg")  # Define o backend 'Agg', que não depende do Tkinter, útil para gerar gráficos em RMarkdown/HTML
+
+import matplotlib.pyplot as plt  # Importa a interface pyplot do Matplotlib para criar gráficos
+
+```
+
+
+```{python}
+# Calcula a média de horas trabalhadas por semana agrupando pelo nível salarial ('income')
+media_horas = df.group_by("income").agg(
+    pl.col("hours-per-week").mean().alias("media_horas")  # calcula a média da coluna 'hours-per-week' e renomeia para 'media_horas'
+)
+
+# Extrai os nomes das classes salariais e os valores médios diretamente do Polars para plotagem
+classes = media_horas["income"].to_list()  # lista com as categorias de 'income'
+valores = media_horas["media_horas"].to_list()  # lista com as médias correspondentes
+
+# Criar gráfico de barras usando Matplotlib
+plt.figure(figsize=(8,5))  # define o tamanho da figura
+plt.bar(classes, valores, color=['skyblue', 'salmon'])  # cria barras com cores diferentes para cada classe
+plt.title("Média de Horas Trabalhadas por Semana por Classe Salarial")  # título do gráfico
+plt.xlabel("Classe Salarial")  # rótulo do eixo x
+plt.ylabel("Horas Semanais Médias")  # rótulo do eixo y
+plt.ylim(0, max(valores) + 5)  # ajusta o limite superior do eixo y para melhor visualização
+plt.show()  # exibe o gráfico
+
+
+```
+##Desafio
+
+```{python}
+# Contagem total de pessoas por gênero
+total_por_genero = df.group_by("sex").agg(
+    pl.len().alias("total")  # conta o número de linhas por gênero e renomeia para 'total'
+)
+
+# Contagem de pessoas com income >50K por gênero
+acima_50k_por_genero = df.filter(df["income"] == ">50K").group_by("sex").agg(
+    pl.len().alias("acima_50k")  # conta o número de pessoas ganhando acima de 50K por gênero
+)
+
+# Juntar os resultados e calcular a porcentagem de pessoas com income >50K
+distribuicao_genero = total_por_genero.join(acima_50k_por_genero, on="sex", how="left").with_columns(
+    (pl.col("acima_50k") / pl.col("total") * 100).alias("perc_acima_50k")  # calcula a proporção em porcentagem
+)
+
+# Exibe a tabela com total, acima de 50K e porcentagem por gênero
+print(distribuicao_genero)
+
+# Comentário final interpretativo sobre a disparidade salarial observada
+print("logo, há evidência de disparidade salarial entre gêneros biológicos neste dataset, pois A proporção de homens ganhando acima de 50K é quase 3 vezes maior que a das mulheres como mostram os dados")
+
+
+```
+
+##horario do html
+
+```{r}
+# Captura o horário atual
+horario_geracao <- Sys.time()
+
+# Mostrar no console
+horario_geracao
+
+# Ou inserir em um HTML (exemplo com cat)
+cat("<p>Relatório gerado em:", horario_geracao, "</p>")
+```
+
