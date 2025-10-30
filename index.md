@@ -218,6 +218,14 @@ Repositório para o **Desafio Plus de ME315 - Manipulação de Banco de Dados**.
         <a href="./Desafio%2013.qmd">Desafio 13.qmd</a>
         <p>Arquivo Quarto do Desafio 13.</p>
       </div>
+      <div class="card">
+        <a href="./Desafio%2014.html">Desafio 14.html</a>
+        <p>HTML do Desafio 14.</p>
+      </div>
+      <div class="card">
+        <a href="./Desafio%2014.qmd">Desafio 14.qmd</a>
+        <p>Arquivo Quarto do Desafio 14.</p>
+      </div>
     </div>
   </div>
 
