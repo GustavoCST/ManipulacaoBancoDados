@@ -226,6 +226,10 @@ Repositório para o **Desafio Plus de ME315 - Manipulação de Banco de Dados**.
         <a href="./Desafio%2014.qmd">Desafio 14.qmd</a>
         <p>Arquivo Quarto do Desafio 14.</p>
       </div>
+      <div class="card">
+        <a href="./Desafio_15.ipynb">Desafio 15.ipynb</a>
+        <p>Notebook do Desafio 15 (loop em série vs paralelizado em Julia).</p>
+      </div>
     </div>
   </div>
 
